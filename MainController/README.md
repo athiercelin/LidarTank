@@ -23,3 +23,5 @@ ds4drv
 https://github.com/chrippa/ds4drv
 
 Read input from /dev/input
+
+sudo apt-get install joystick
