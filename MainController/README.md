@@ -25,3 +25,8 @@ https://github.com/chrippa/ds4drv
 Read input from /dev/input
 
 sudo apt-get install joystick
+https://github.com/drewnoakes/joystick
+
+
+## LAunching app at boot
+@reboot /home/pi/Documents/LidarTank/bin/LidarTank &
