@@ -59,7 +59,7 @@ int main(int argc, char** argv)
   while (true)
     {
       // Restrict rate
-      usleep(1000);
+      usleep(1000); // original value 1000
 
       // Attempt to sample an event from the joystick
       JoystickEvent event;
@@ -85,22 +85,17 @@ int main(int argc, char** argv)
 
 	      newCmd = leftAxisPercentageToCommand(axisEventValueToPercentage(&event));
 	      
-	      // if (event.value != 0) {
-	      // 	if (event.value > 0) {
-	      // 	  newCmd = 21;
-	      // 	} else {
-	      // 	  newCmd = 181;
-	      // 	}
-	      // } else {
-	      // 	newCmd = 100;
-	      // }
-
 	      if (newCmd != command) {
+		printf("I2C Sending %d\n", newCmd);
+
+		// TODO: This needs a throttling, 5-10Hz
+		while (wiringPiI2CWrite(motorMCUfd, newCmd) != 0) {
+		  usleep(1000);
+		}
 		command = newCmd;
-		printf("I2C Sending %d", command);
-		wiringPiI2CWrite(motorMCUfd, command);
+
 	      } else {
-		printf("OLD: [%d] NEW: [%d]\n", command, newCmd);
+		//	printf("OLD: [%d] NEW: [%d]\n", command, newCmd);
 	      }
 	  
 	    }
@@ -109,22 +104,18 @@ int main(int argc, char** argv)
 	      int newCmd = 0;
 	 
 	      newCmd = rightAxisPercentageToCommand(axisEventValueToPercentage(&event));
-	      // if (event.value != 0) {
-	      // 	if (event.value > 0) {
-	      // 	  newCmd = 20;
-	      // 	} else {
-	      // 	  newCmd = 180;
-	      // 	}
-	      // } else {
-	      // 	newCmd = 100;
-	      // }
 
 	      if (newCmd != command) {
+		printf("I2C Sending %d\n", newCmd);
+
+		// TODO: This needs a throttling, 5-10Hz
+		while (wiringPiI2CWrite(motorMCUfd, newCmd) != 0) {
+		  usleep(1000);
+		}
 		command = newCmd;
-		printf("I2C Sending %d", command);
-		wiringPiI2CWrite(motorMCUfd, command);
+		
 	      } else {
-		printf("OLD: [%d] NEW: [%d]\n", command, newCmd);
+		//	printf("OLD: [%d] NEW: [%d]\n", command, newCmd);
 	      }
 	
 	    }
@@ -141,10 +132,15 @@ int axisEventValueToPercentage(JoystickEvent *event) {
 
   if (eventValue > 0) {
     percentage = -1 * ((float)eventValue / (float)event->MAX_AXES_VALUE) * 100;
-    printf("EventVal: %d, [%d] Percentage: %d\n", eventValue, event->MAX_AXES_VALUE, percentage);
+    // printf("EventVal: %d, [%d] Percentage: %d\n", eventValue, event->MAX_AXES_VALUE, percentage);
   } else if (eventValue < 0) {
     percentage = ((float) eventValue / (float)event->MIN_AXES_VALUE) * 100;
-    printf("EventVal: %d, [%d] Percentage: %d\n", eventValue, event->MIN_AXES_VALUE, percentage);
+    // printf("EventVal: %d, [%d] Percentage: %d\n", eventValue, event->MIN_AXES_VALUE, percentage);
+  }
+
+  // Filter
+  if (percentage > -10 && percentage < 10) {
+    percentage = 0;
   }
   return percentage; 
 }
