@@ -6,10 +6,6 @@
 // 
 
 #include "main.hpp"
-#include "joystick.hh"
-
-#include <wiringPi.h>
-#include <wiringPiI2C.h>
 
 int main(int argc, char** argv)
 {
@@ -18,26 +14,23 @@ int main(int argc, char** argv)
   //  Init the Controller
   //
 
-  printf("Initialize Remote Controller\n");
-  
-  bool joystickFound = false;
-  Joystick *joystick = NULL;
+  std::string devicePath("/dev/input/js0");
 
+  printf("Initialize Remote Controller\n");
+  Joystick *joystick = NULL;
   
-  while (joystickFound == false) {
+  while (true) {
   
     // Create an instance of Joystick
-    Joystick tmpJoystick("/dev/input/js0");
+    joystick = new Joystick(devicePath);
 
-    joystick = &tmpJoystick;
-    joystickFound = tmpJoystick.isFound();
-
-    // Ensure that it was found and that we can use it
-    if (!tmpJoystick.isFound())
+    if (!joystick->isFound())
     {
       printf("Failed finding joystick device. Will try again in 2s\n");
-    //exit(1);
+      delete joystick;
       sleep(2);
+    } else {
+      break;
     }
   }
 
@@ -89,21 +82,25 @@ int main(int argc, char** argv)
 	    if (axisNumber == 1) { // Left Stick
 	      static int command = 100; // 0
 	      int newCmd = 0;
-	 
-	      if (event.value != 0) {
-		if (event.value > 0) {
-		  newCmd = 21;
-		} else {
-		  newCmd = 181;
-		}
-	      } else {
-		newCmd = 100;
-	      }
+
+	      newCmd = leftAxisPercentageToCommand(axisEventValueToPercentage(&event));
+	      
+	      // if (event.value != 0) {
+	      // 	if (event.value > 0) {
+	      // 	  newCmd = 21;
+	      // 	} else {
+	      // 	  newCmd = 181;
+	      // 	}
+	      // } else {
+	      // 	newCmd = 100;
+	      // }
 
 	      if (newCmd != command) {
 		command = newCmd;
 		printf("I2C Sending %d", command);
 		wiringPiI2CWrite(motorMCUfd, command);
+	      } else {
+		printf("OLD: [%d] NEW: [%d]\n", command, newCmd);
 	      }
 	  
 	    }
@@ -111,24 +108,71 @@ int main(int argc, char** argv)
 	      static int command = 100; // 0
 	      int newCmd = 0;
 	 
-	      if (event.value != 0) {
-		if (event.value > 0) {
-		  newCmd = 20;
-		} else {
-		  newCmd = 180;
-		}
-	      } else {
-		newCmd = 100;
-	      }
+	      newCmd = rightAxisPercentageToCommand(axisEventValueToPercentage(&event));
+	      // if (event.value != 0) {
+	      // 	if (event.value > 0) {
+	      // 	  newCmd = 20;
+	      // 	} else {
+	      // 	  newCmd = 180;
+	      // 	}
+	      // } else {
+	      // 	newCmd = 100;
+	      // }
 
 	      if (newCmd != command) {
 		command = newCmd;
 		printf("I2C Sending %d", command);
 		wiringPiI2CWrite(motorMCUfd, command);
+	      } else {
+		printf("OLD: [%d] NEW: [%d]\n", command, newCmd);
 	      }
 	
 	    }
 	  }
 	}
     }
+}
+
+
+int axisEventValueToPercentage(JoystickEvent *event) {
+
+  int eventValue = event->value;
+  int percentage = 0;
+
+  if (eventValue > 0) {
+    percentage = -1 * ((float)eventValue / (float)event->MAX_AXES_VALUE) * 100;
+    printf("EventVal: %d, [%d] Percentage: %d\n", eventValue, event->MAX_AXES_VALUE, percentage);
+  } else if (eventValue < 0) {
+    percentage = ((float) eventValue / (float)event->MIN_AXES_VALUE) * 100;
+    printf("EventVal: %d, [%d] Percentage: %d\n", eventValue, event->MIN_AXES_VALUE, percentage);
+  }
+  return percentage; 
+}
+
+int leftAxisPercentageToCommand(int percentage) {
+  int command = percentage + 100;
+
+  if (!(command % 2) && command != 100) {
+    if (command == 200) {
+      command--;
+    } else {
+      command++;
+    }
+  }     
+  
+  return command;
+}
+
+int rightAxisPercentageToCommand(int percentage) {
+  int command = percentage + 100;
+  
+  if (command % 2 && command != 100) {
+    if (command != 200) {
+      command++;
+    } else {
+      command--;
+    }
+  }     
+  
+  return command;
 }
