@@ -17,21 +17,38 @@ int main(int argc, char** argv)
   //
   //  Init the Controller
   //
-  
-  // Create an instance of Joystick
-  Joystick joystick("/dev/input/js0");
 
-  // Ensure that it was found and that we can use it
-  if (!joystick.isFound())
-  {
-    printf("open failed.\n");
-    exit(1);
+  printf("Initialize Remote Controller\n");
+  
+  bool joystickFound = false;
+  Joystick *joystick = NULL;
+
+  
+  while (joystickFound == false) {
+  
+    // Create an instance of Joystick
+    Joystick tmpJoystick("/dev/input/js0");
+
+    joystick = &tmpJoystick;
+    joystickFound = tmpJoystick.isFound();
+
+    // Ensure that it was found and that we can use it
+    if (!tmpJoystick.isFound())
+    {
+      printf("Failed finding joystick device. Will try again in 2s\n");
+    //exit(1);
+      sleep(2);
+    }
   }
 
+  printf("*** Remote Controller ready!\n");
+  
   //
   //  I2C/GPIO setup
   //
 
+  printf("Initializing I2C\n");
+  
   wiringPiSetupGpio();
   int motorMCUfd = wiringPiI2CSetup(0x08);
   if (motorMCUfd < 0)
@@ -40,7 +57,7 @@ int main(int argc, char** argv)
       return 0;
     }
 
-  
+  printf("*** I2C ready!\n");
 
   //
   //  Main Loop
@@ -53,7 +70,7 @@ int main(int argc, char** argv)
 
       // Attempt to sample an event from the joystick
       JoystickEvent event;
-      if (joystick.sample(&event))
+      if (joystick->sample(&event))
 	{
 	  if (event.isButton()) {
 	    if (event.number == 0) {
