@@ -34,3 +34,8 @@ $(TARGET): $(OBJS)
 
 clean:
 	$(RM) *.o *~ $(TARGET)
+
+DESTINATION = ../../bin
+
+install:
+	mv $(TARGET) $(DESTINATION)
