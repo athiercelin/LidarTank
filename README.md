@@ -20,13 +20,12 @@
 |1|![img](./images/power_supply.jpg)|[Power Supply](https://www.amazon.com/gp/product/B01N336XEU/ref=oh_aui_detailpage_o05_s00?ie=UTF8&psc=1)|The Raspberry Pi 3+ is more hungry and will need a more powerful USB power supply|
 
 
++ PS DS4 controller
 
 
 
 
-imu
 
 ## Notes
 sudo apt-get install joystick
 
-ds4drv
