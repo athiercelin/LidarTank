@@ -29,3 +29,7 @@
 ## Notes
 sudo apt-get install joystick
 
+jstest /dev/input/js0
+
+
+https://github.com/drewnoakes/joystick
